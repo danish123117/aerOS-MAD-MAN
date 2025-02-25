@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Generator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Order Generator</h1>
+        
+        <div class="status-board">
+            <div class="status">Waiting: <span id="waiting">{{ data["incompleteOrderList"] | length }}</span></div>
+            <div class="status">In Process: <span id="inprocess">{{ data["processingOrderList"] | length }}</span></div>
+            <div class="status">Processed: <span id="processed">{{ data["completedOrderList"] | length }}</span></div>
+        </div>
+
+        <div class="controls">
+            <label for="mode">Mode:</label>
+            <select id="mode">
+                <option value="Baseline">Baseline</option>
+                <option value="Recommendation">Recommendation</option>
+            </select>
+            <button id="start-batch">Start Producing Next Batch</button>
+            <button id="complete-batch">Batch Production Complete</button>
+        </div>
+
+        <h2>Current Order Batch</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Start Time</th>
+                    <th>Quantity</th>
+                </tr>
+            </thead>
+            <tbody id="current-batch">
+                {% for order in data["processingOrderList"] %}
+                <tr>
+                    <td>{{ order[0] }}</td>
+                    <td>{{ order[1] }}</td>
+                    <td>{{ order[2] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h2>Waiting List</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Order Receive Time</th>
+                    <th>Quantity</th>
+                </tr>
+            </thead>
+            <tbody id="waiting-list">
+                {% for order in data["incompleteOrderList"] %}
+                <tr>
+                    <td>{{ order[0] }}</td>
+                    <td>{{ order[1] }}</td>
+                    <td>{{ order[2] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

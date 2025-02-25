@@ -1,0 +1,65 @@
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background-color: #f4f4f4;
+}
+
+.container {
+    width: 80%;
+    margin: auto;
+    padding: 20px;
+    background: white;
+    box-shadow: 0px 0px 10px gray;
+    border-radius: 10px;
+}
+
+h1 {
+    color: #333;
+}
+
+.status-board {
+    display: flex;
+    justify-content: space-around;
+    margin: 20px 0;
+}
+
+.status {
+    font-size: 18px;
+    background: #008CBA;
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.controls {
+    margin: 20px 0;
+}
+
+button {
+    background: green;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    cursor: pointer;
+    margin: 5px;
+    border-radius: 5px;
+}
+
+button:hover {
+    background: darkgreen;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+}
+
+table, th, td {
+    border: 1px solid black;
+}
+
+th, td {
+    padding: 10px;
+    text-align: center;
+}

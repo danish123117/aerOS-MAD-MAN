@@ -1,0 +1,9 @@
+ORION_HOST
+ORION_PORT
+ENTITY_ID
+CONTEXT
+CONTEXT_PORT
+
+
+
+endpoint : "http://<FLASK_SERVER_IP>:3030/notify"
