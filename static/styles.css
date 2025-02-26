@@ -49,6 +49,11 @@ button:hover {
     background: darkgreen;
 }
 
+button:disabled {
+    background: gray;
+    cursor: not-allowed;
+}
+
 table {
     width: 100%;
     border-collapse: collapse;

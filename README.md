@@ -1,10 +1,10 @@
 # Order Generator
 
 ## Function
-This application generates orders with constant standard deviations and mean values and sends them to the Orion-LD context broker.
+This application is the main frontend for order management At MADE CC
 
 ## Default Port
-`3020`
+`3040`
 
 ## Environment Variables
 The application requires the following environment variables:
@@ -13,20 +13,19 @@ The application requires the following environment variables:
 - `ORION_LD_PORT` (default: `1026`)
 - `CONTEXT_HOST` (default: `localhost`)
 - `CONTEXT_PORT` (default: `5051`)
-- `NOTIFY_HOST` (default: `localhost`)
-- `NOTIFY_PORT` (default: `3030`)
+- `ORION_ORDER_ENTITY` (default: `"urn:ngsi-ld:queue:queue001"`)
+- `WMS_ORDER_INFO_URL` (default: <wms_login_url>)
+- `WMS_USERNAME` (default: <wms_username>)
+- `WMS_PASSWORD` (default: <wms_password>)
+- `MS_POST_URL` (default: <wms_post_url>)
+
 
 ## Application Screenshot
-![screenshot](Application Images/App Screenshot.png)
-
-## Functionality
-- Creates an entity for the generated order: `urn:ngsi-ld:extOrder:order001`
-- Subscribes to this entity to notify the persistor about changes in its values.
-- Every time a new order is generated, a notification is sent to the persistor component, which updates the relevant entity in Orion-LD.
+![screenshot](App_Screenshot.png)
 
 ## First Run Setup
 Before using the application, run the setup method:
-`localhost:3020/setup`
+`localhost:3040/setup`
 
 ## Usage
 To start, pull the repo from GitHub and run the following commands:
