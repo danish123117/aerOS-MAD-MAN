@@ -13,7 +13,6 @@ The application requires the following environment variables:
 - `ORION_LD_PORT` (default: `1026`)
 - `CONTEXT_HOST` (default: `localhost`)
 - `CONTEXT_PORT` (default: `5051`)
-- `ORION_QUEUE_ENTITY` (default: `"urn:ngsi-ld:queue:queue001"`)
 - `WMS_ORDER_INFO_URL` (default: <wms_login_url>)
 - `WMS_USERNAME` (default: <wms_username>)
 - `WMS_PASSWORD` (default: <wms_password>)

@@ -23,7 +23,6 @@ in_process_list = []
 
 ORION_LD_URL = os.getenv("ORION_LD_URL", "localhost")
 ORION_LD_PORT = os.getenv("ORION_LD_PORT", 1026)
-ORION_QUEUE_ENTITY = os.getenv("ORION_QUEUE_ENTITY", "urn:ngsi-ld:queue:queue001")
 CONTEXT_URL = os.getenv("CONTEXT_URL", "context")
 CONTEXT_PORT = os.getenv("CONTEXT_PORT", 5051)
 
