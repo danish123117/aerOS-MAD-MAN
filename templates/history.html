@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Generator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>View Completed orders</h1>
+        <div class="status-board">
+            <div class="status">Processed: <span id="processed">{{ completed_orders | length }}</span></div>
+        </div>
+
+        <h2>Completed orders </h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Production Start Time</th>
+                    <th>Production End Time</th>               
+                    <th>Production Location</th>
+                    <th>Quantity</th>
+                </tr>
+            </thead>
+            <tbody id="current-batch">
+                {% for order in completed_orders %}
+                <tr>
+                    <td>{{ order["id"][24:] }}</td>
+                    <td>{{ order["productionStartTime"] }}</td>
+                    <td>{{ order["productionEndTime"] }}</td>
+                    <td>{{ order["productionLocation"] }}</td>
+                    <td>{{ order["orderQuantity"] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="controls">
+            <form action="/">
+                <button type = 'submit'>Return Home</button>
+            </form>
+        </div>
+       
+    </div>
+     <script src="{{ url_for('static', filename='script_p2.js') }}"></script>
+</body>
+</html>
