@@ -19,6 +19,8 @@ app = Flask(__name__)
 
 global in_process_list
 in_process_list = []
+global lea_order
+lea_order = None
 
 
 ORION_LD_URL = os.getenv("ORION_LD_URL", "localhost")
@@ -28,7 +30,7 @@ CONTEXT_PORT = os.getenv("CONTEXT_PORT", 5051)
 
 WMS_ORDER_INFO_URL = os.getenv("WMS_ORDER_INFO_URL","https://made.logistics.reply.com/external/made/made-resources/auxiliary/ProductionOrder")# update correct one
 WMS_USERNAME = os.getenv("WMS_USERNAME","made")
-WMS_PASSWORD = os.getenv("WMS_PASSWORD")
+WMS_PASSWORD = os.getenv("WMS_PASSWORD","Welcome.01")
 WMS_POST_URL = os.getenv("WMS_POST_URL","https://made.logistics.reply.com/external/made/import/createOrders")
 
 NOTIFY_URL = os.getenv("NOTIFY_URL", "localhost")
@@ -47,17 +49,6 @@ def orderQuantity(order_list):
             continue
     return order_qty
 
-
-def wms_get_order_info(order_number=None):
-    url = WMS_ORDER_INFO_URL
-    if order_number:
-        url += f"?orderNumber={order_number}"
-    response = requests.get(url, auth=(WMS_USERNAME, WMS_PASSWORD))
-    if response.status_code == 200:
-        return response.json()
-    else:
-        return {"error": response.text}
-    
 def complete_production(data): 
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")[:-2]
     
@@ -67,28 +58,47 @@ def complete_production(data):
     elif not isinstance(data["completedOrderList"], dict):
         data["completedOrderList"] = {"type": "Property", "value": []}
     elif "value" not in data["completedOrderList"]:
-        data["completedOrderList"]["value"] = []
-    
+        data["completedOrderList"]["value"] = [] 
     # Get processing orders
-    processing_orders = data.get("processingOrderList", {}).get("value", [])
-    
+    processing_orders = data.get("processingOrderList", {}).get("value", [])   
     # Add timestamp and move to completed orders
     for order in processing_orders:
-        # Make sure order is a list
         if not isinstance(order, list):
             order = [order]
-        
-        # Make a copy to avoid modifying the original
         order_copy = order.copy()
         order_copy.append(timestamp)  # Add completion timestamp
-        
-        # Add the completed order to the completed list
         data["completedOrderList"]["value"].append(order_copy)
-
-    # Clear processing order list
-    data["processingOrderList"]["value"] = []
-    
+    data["processingOrderList"]["value"] = [] 
     return data
+
+def get_current_order_number():
+    global lea_order
+    response = requests.get(WMS_ORDER_INFO_URL, auth=(WMS_USERNAME, WMS_PASSWORD))
+    if response.status_code == 200:
+        orders = response.json()
+        for order in orders:
+            if order['status'] !='COMPLETED' and order['status'] !="CANCELLED" and order["id"]>=258204:
+                lea_order= order["orderNumber"]  
+    if lea_order is None:
+        logger.warning("LEA order is not set.")
+        return None
+    else:
+        return lea_order
+    
+def track_order_status(order_number):
+    url = f"{WMS_ORDER_INFO_URL}?orderNumber={order_number}"
+    response = requests.get(url, auth=(WMS_USERNAME, WMS_PASSWORD))
+    if response.status_code == 200:
+        order_info = response.json()
+        if order_info and isinstance(order_info, list):
+            return order_info[0].get("status")
+        else:
+            logger.warning(f"Order {order_number} not found or invalid response format.")
+            return None
+    else:
+        logger.error(f"Failed to fetch order status: {response.text}")
+        return None
+
 # Function to post order to factory
 def post_order_to_factory(order_qty):
     payload = json.dumps([
@@ -99,9 +109,13 @@ def post_order_to_factory(order_qty):
         }
     ])
     response = requests.post(WMS_POST_URL, data=payload, auth=(WMS_USERNAME, WMS_PASSWORD))
-    return 1 if response.status_code == 200 else {"error": response.text}
-
-
+    order_number = get_current_order_number()
+    if response.status_code == 200:
+        logger.info(f"Order {order_number} posted successfully.")
+        return order_number
+    else:
+        logger.error(f"Failed to post order: {response.text}")
+        return None
 
 @app.route("/")
 def home():
@@ -112,7 +126,7 @@ def home():
 def start_production():
     data = request.get_json(silent=True) or {}
     mode = data.get("mode", "Baseline")
-    #mode ="Baseline"
+    mode ="Base"
     if mode == "Baseline": 
         n=2
     else: 
@@ -130,15 +144,15 @@ def start_production():
         in_process_list = incomplete_orders[:i]
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")[:-2]
         response_patch =update_processing_order_list(in_process_list, ORION_LD_URL, ORION_LD_PORT, CONTEXT_URL, CONTEXT_PORT,timestamp)
-        # response_factory = post_order_to_factory(orderQuantity(in_process_list))
-        # if response_patch and response_factory:
-        #     return jsonify({"success": True})
-        # else:
-        #     return jsonify({"success": False})
-        if response_patch:
+        response_factory = post_order_to_factory(orderQuantity(in_process_list))
+        if response_patch and response_factory:
             return jsonify({"success": True})
         else:
             return jsonify({"success": False})
+        # if response_patch:
+        #     return jsonify({"success": True})
+        # else:
+        #     return jsonify({"success": False})
     else:
         return jsonify({"Status": "No orders to process"})
 
@@ -146,11 +160,13 @@ def start_production():
 
 @app.route("/complete_production", methods=["POST"])
 def complete_production():
+    global lea_order
     _, in_process_list, _ = extract_entity_data(ORION_LD_URL, ORION_LD_PORT, CONTEXT_URL, CONTEXT_PORT, ENTITY_TYPE="Order")
     if in_process_list:
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")[:-2]
         response = update_complete_order_list(in_process_list, ORION_LD_URL, ORION_LD_PORT, CONTEXT_URL, CONTEXT_PORT,timestamp)
         if response:
+            lea_order = None
             return jsonify({"success": True})
         else:
             return jsonify({"success": False})
@@ -173,19 +189,21 @@ def history():
     _, _, comleted_orders = extract_entity_data(ORION_LD_URL, ORION_LD_PORT, CONTEXT_URL, CONTEXT_PORT, ENTITY_TYPE="Order")
     return render_template("history.html", completed_orders=comleted_orders)
 
-@app.route('/setup')
-def setup():
-    notify_endpoint_update = f"http://{NOTIFY_URL}:{NOTIFY_PORT}/update"
-    notify_endpoint_create = f"http://{NOTIFY_URL}:{NOTIFY_PORT}/create"
-    update_status = ngsi_subscribe_status_update(ORION_LD_URL,ORION_LD_PORT,CONTEXT_URL,CONTEXT_PORT,notify_endpoint=notify_endpoint_update)
-    subscribe_status = ngsi_subscribe_creation(ORION_LD_URL,ORION_LD_PORT,CONTEXT_URL,CONTEXT_PORT,notify_endpoint=notify_endpoint_create)
-       
-    if update_status is None or subscribe_status is None:
-        return "An error occurred while setting up.", 500  # Return a 500 error with a message
 
-    else: 
-        return "ok", 204
-    # optional now
+@app.route('/current_order_status', methods=['GET'])
+def lea_status():
+    global lea_order
+    order_number = lea_order
+    if order_number is None:
+        order_number = get_current_order_number()
+    if order_number:
+        status = track_order_status(order_number)
+        if status:
+            return jsonify({"status": status})
+        else:
+            return jsonify({"error": "Failed to fetch order status"}), 500
+    else:
+        return jsonify({"error": "No current LEA order number found"}), 404
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=3040,debug=True)

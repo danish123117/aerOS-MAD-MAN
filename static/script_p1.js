@@ -1,6 +1,5 @@
 document.addEventListener('DOMContentLoaded', function () {
     const startBtn = document.getElementById('start-batch');
-    const completeBtn = document.getElementById('complete-batch');
 
     startBtn.addEventListener('click', function () {
         const mode = document.getElementById('mode').value;  // Get selected mode from dropdown
@@ -15,29 +14,13 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(data => {
             if (data.success) {
                 startBtn.disabled = true;
-                completeBtn.disabled = false;
                 fetchOrders();
             } else {
                 alert('Failed to start production:No orders available');
             }
         });
     });
-    completeBtn.addEventListener('click', function () {
-        fetch('/complete_production', {
-            method: 'POST'
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                startBtn.disabled = false;
-                completeBtn.disabled = true;
-                fetchOrders();
-            } else {
-                alert('Failed to complete production');
-            }
-        });
-    });
-
+    
     function fetchOrders() {
         fetch('/get_orders')
         .then(response => response.json())
@@ -46,7 +29,7 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('waiting').textContent = data.incomplete_orders.length;
             document.getElementById('inprocess').textContent = data.processing_orders.length;
             document.getElementById('processed').textContent = data.completed_orders.length;
-
+    
             // Update Current Batch Table
             const currentBatchBody = document.getElementById('current-batch');
             currentBatchBody.innerHTML = '';
@@ -59,7 +42,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 `;
                 currentBatchBody.appendChild(row);
             });
-
+    
             // Update Waiting List Table
             const waitingListBody = document.getElementById('waiting-list');
             waitingListBody.innerHTML = '';
@@ -72,17 +55,39 @@ document.addEventListener('DOMContentLoaded', function () {
                 `;
                 waitingListBody.appendChild(row);
             });
-
+    
             // Enable/Disable buttons based on order state
             if (data.processing_orders.length > 0) {
                 startBtn.disabled = true;
-                completeBtn.disabled = false;
+    
+                // Fetch current order status
+                fetch('/current_order_status')
+                .then(res => res.json())
+                .then(statusData => {
+                    if (statusData.status === "COMPLETE" || statusData.status === "CANCELLED") {
+                        // Call the complete production route
+                        fetch('/complete_production', { method: 'POST' })
+                        .then(resp => resp.json())
+                        .then(result => {
+                            if (result.success) {
+                                console.log(result.message || 'Production completed.');
+                                fetchOrders();
+                            } else {
+                                console.warn(result.message || 'Production completion failed.');
+                            }
+                        })
+                        .catch(err => {
+                            console.error('Error completing production:', err);
+                        });
+                    
+                    }
+                });
             } else {
                 startBtn.disabled = false;
-                completeBtn.disabled = true;
             }
         });
     }
+    
 
     // Initial fetch and auto-update every 3 seconds
     fetchOrders();

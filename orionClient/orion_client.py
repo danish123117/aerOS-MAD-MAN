@@ -42,7 +42,7 @@ def _split_data_on_status(data):
 
 def extract_entity_data(ORION_LD_HOST, ORION_LD_PORT, CONTEXT_URL, CONTEXT_PORT, ENTITY_TYPE="Order"):
     """Fetch the current state of the queue entity from Orion-LD."""
-    url = f"http://{ORION_LD_HOST}:{ORION_LD_PORT}/ngsi-ld/v1/entities?type={ENTITY_TYPE}&options=keyValues?limit=1000"
+    url = f"http://{ORION_LD_HOST}:{ORION_LD_PORT}/ngsi-ld/v1/entities?type={ENTITY_TYPE}&options=keyValues&limit=1000"
     headers = {
         'Link': f'<http://{CONTEXT_URL}:{CONTEXT_PORT}/ngsi-context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"',
         'Accept': 'application/json'
