@@ -22,10 +22,6 @@ The application requires the following environment variables:
 ## Application Screenshot
 ![screenshot](App_Screenshot.png)
 
-## First Run Setup
-Before using the application, run the setup method:
-`localhost:3040/setup`
-
 ## Usage
 To start, pull the repo from GitHub and run the following commands:
 
