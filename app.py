@@ -30,7 +30,7 @@ CONTEXT_PORT = os.getenv("CONTEXT_PORT", 5051)
 
 WMS_ORDER_INFO_URL = os.getenv("WMS_ORDER_INFO_URL","https://made.logistics.reply.com/external/made/made-resources/auxiliary/ProductionOrder")# update correct one
 WMS_USERNAME = os.getenv("WMS_USERNAME","made")
-WMS_PASSWORD = os.getenv("WMS_PASSWORD","Welcome.01")
+WMS_PASSWORD = os.getenv("WMS_PASSWORD",)
 WMS_POST_URL = os.getenv("WMS_POST_URL","https://made.logistics.reply.com/external/made/import/createOrders")
 
 NOTIFY_URL = os.getenv("NOTIFY_URL", "localhost")
