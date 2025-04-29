@@ -124,6 +124,7 @@ def home():
 
 @app.route("/start_production", methods=["POST"])
 def start_production():
+    global lea_order
     data = request.get_json(silent=True) or {}
     mode = data.get("mode", "Baseline")
     mode ="Base"
@@ -145,6 +146,7 @@ def start_production():
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")[:-2]
         response_patch =update_processing_order_list(in_process_list, ORION_LD_URL, ORION_LD_PORT, CONTEXT_URL, CONTEXT_PORT,timestamp)
         response_factory = post_order_to_factory(orderQuantity(in_process_list))
+        lea_order = response_factory
         if response_patch and response_factory:
             return jsonify({"success": True})
         else:
