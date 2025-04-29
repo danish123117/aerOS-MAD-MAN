@@ -16,11 +16,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 startBtn.disabled = true;
                 fetchOrders();
             } else {
-                alert('Failed to start production:No orders available');
+                alert('Failed to start production: No orders available');
             }
         });
     });
-    
+
     function fetchOrders() {
         fetch('/get_orders')
         .then(response => response.json())
@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('waiting').textContent = data.incomplete_orders.length;
             document.getElementById('inprocess').textContent = data.processing_orders.length;
             document.getElementById('processed').textContent = data.completed_orders.length;
-    
+
             // Update Current Batch Table
             const currentBatchBody = document.getElementById('current-batch');
             currentBatchBody.innerHTML = '';
@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 `;
                 currentBatchBody.appendChild(row);
             });
-    
+
             // Update Waiting List Table
             const waitingListBody = document.getElementById('waiting-list');
             waitingListBody.innerHTML = '';
@@ -55,15 +55,20 @@ document.addEventListener('DOMContentLoaded', function () {
                 `;
                 waitingListBody.appendChild(row);
             });
-    
+
             // Enable/Disable buttons based on order state
             if (data.processing_orders.length > 0) {
                 startBtn.disabled = true;
-    
+
                 // Fetch current order status
                 fetch('/current_order_status')
                 .then(res => res.json())
                 .then(statusData => {
+                    if (statusData.error) {
+                        console.warn("LEA entity or order status error:", statusData.error);
+                        return;
+                    }
+
                     if (statusData.status === "COMPLETE" || statusData.status === "CANCELLED") {
                         // Call the complete production route
                         fetch('/complete_production', { method: 'POST' })
@@ -79,17 +84,20 @@ document.addEventListener('DOMContentLoaded', function () {
                         .catch(err => {
                             console.error('Error completing production:', err);
                         });
-                    
                     }
+                })
+                .catch(err => {
+                    console.error('Error fetching current order status:', err);
                 });
+
             } else {
                 startBtn.disabled = false;
             }
         });
     }
-    
 
-    // Initial fetch and auto-update every 3 seconds
+    // Initial fetch and auto-update every 5 seconds
     fetchOrders();
     setInterval(fetchOrders, 5000);
 });
+

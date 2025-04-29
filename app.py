@@ -146,7 +146,7 @@ def start_production():
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")[:-2]
         response_patch =update_processing_order_list(in_process_list, ORION_LD_URL, ORION_LD_PORT, CONTEXT_URL, CONTEXT_PORT,timestamp)
         response_factory = post_order_to_factory(orderQuantity(in_process_list))
-        lea_order = response_factory
+        lea_response = update_lea_entity(ORION_LD_URL, ORION_LD_PORT, CONTEXT_URL, CONTEXT_PORT, response_factory)
         if response_patch and response_factory:
             return jsonify({"success": True})
         else:
@@ -162,18 +162,25 @@ def start_production():
 
 @app.route("/complete_production", methods=["POST"])
 def complete_production():
-    global lea_order
-    _, in_process_list, _ = extract_entity_data(ORION_LD_URL, ORION_LD_PORT, CONTEXT_URL, CONTEXT_PORT, ENTITY_TYPE="Order")
+    _, in_process_list, _ = extract_entity_data(ORION_LD_URL, ORION_LD_PORT,CONTEXT_URL, CONTEXT_PORT,ENTITY_TYPE="Order")
+
     if in_process_list:
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")[:-2]
-        response = update_complete_order_list(in_process_list, ORION_LD_URL, ORION_LD_PORT, CONTEXT_URL, CONTEXT_PORT,timestamp)
+        response = update_complete_order_list(in_process_list,ORION_LD_URL, ORION_LD_PORT,CONTEXT_URL, CONTEXT_PORT,timestamp)
+
         if response:
-            lea_order = None
-            return jsonify({"success": True})
+            # Reset the LEA entity's current order number to ""
+            update_success = update_lea_entity(ORION_LD_URL, ORION_LD_PORT,CONTEXT_URL, CONTEXT_PORT,order_number="")
+
+            if update_success:
+                return jsonify({"success": True})
+            else:
+                return jsonify({"success": False, "error": "Failed to reset LEA entity"}), 500
         else:
             return jsonify({"success": False})
     else:
         return jsonify({"Status": "No orders to complete"})
+
   
 
 @app.route('/get_orders', methods=['GET'])# Done
@@ -194,10 +201,27 @@ def history():
 
 @app.route('/current_order_status', methods=['GET'])
 def lea_status():
-    global lea_order
-    order_number = lea_order
-    if order_number is None:
+    entity_id = "urn:ngsi-ld:Lorder:Lorder-001"
+
+    lea_entity = get_entity(ORION_LD_URL, ORION_LD_PORT,entity_id,CONTEXT_URL, CONTEXT_PORT)
+
+    if lea_entity is None:
+        logger.warning("LEA entity not found. Attempting to create it...")
+        created = create_lea_entity(ORION_LD_URL, ORION_LD_PORT,CONTEXT_URL, CONTEXT_PORT)
+        if not created:
+            return jsonify({"error": "Failed to create LEA entity"}), 500
+
+        # Try fetching again after creation
+        lea_entity = get_entity(ORION_LD_URL, ORION_LD_PORT,entity_id,CONTEXT_URL, CONTEXT_PORT)
+
+        if lea_entity is None:
+            return jsonify({"error": "Failed to retrieve LEA entity after creation"}), 500
+
+    order_number = lea_entity.get("currentOrderNumber")
+
+    if not order_number:
         order_number = get_current_order_number()
+
     if order_number:
         status = track_order_status(order_number)
         if status:
@@ -206,6 +230,14 @@ def lea_status():
             return jsonify({"error": "Failed to fetch order status"}), 500
     else:
         return jsonify({"error": "No current LEA order number found"}), 404
+    
+@app.route('/setup', methods=['GET','POST'])
+def setup():
+    lea_entity = create_lea_entity(ORION_LD_URL, ORION_LD_PORT, CONTEXT_URL, CONTEXT_PORT)
+    if lea_entity:
+        return jsonify({"success": True})
+    else:
+        return jsonify({"success": False})
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=3040,debug=True)

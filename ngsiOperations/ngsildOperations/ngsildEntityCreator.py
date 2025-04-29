@@ -11,33 +11,5 @@ def ngsi_create_entity(d,orion,orion_port,context,context_port):#updates latest 
     response = requests.request("POST", url, headers=headers, data=payload)
     return response
 
-def ngsi_setup_MAD_MAN(orion,orion_port,context,context_port):
-    data =   {
-    "id": "urn:ngsi-ld:queue:queue001",
-    "type": "queue",
-    "incompleteOrderList": {"type": "Property","value": []},
-    "processingOrderList": {"type": "Property","value": []},
-    "completedOrderList": {"type": "Property","value": []},
-    "incompleteOrderListOutsource": {"type": "Property","value": []},
-    "completedOrderList": {"type": "Property","value": []}
-
-    }
-    payload = data
-    resp= ngsi_create_entity(payload,orion,orion_port,context,context_port)
-    return resp
-
-
-def ngsi_setup_DOG(orion,orion_port,context,context_port):
-    data = {
-    "id": "urn:ngsi-ld:extOrder:order001",
-    "type": "extOrder",
-    "timestamp": "2024-01-16T17:50:07.5870Z",
-    "orderId": "test",
-    "orderQuantity":0 } 
-
-    payload = data
-    resp= ngsi_create_entity(payload,orion,orion_port,context,context_port)
-    return resp
-
 
 #Done

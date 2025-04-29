@@ -1,5 +1,6 @@
 import requests
 import logging
+import json
 # Orion-LD Configuration
 
 
@@ -200,7 +201,56 @@ def ngsi_subscribe_status_update(orion, orion_port, context, context_port, notif
 
 
 
+def create_lea_entity(ORION_LD_URL, ORION_LD_PORT, CONTEXT_URL, CONTEXT_PORT):
+    """Create a new entity in Orion-LD."""
+    url = f"http://{ORION_LD_URL}:{ORION_LD_PORT}/ngsi-ld/v1/entities/"
+    headers = {
+  'Link': f'<http://{CONTEXT_URL}:{CONTEXT_PORT}/ngsi-context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"',
+  'Content-Type': 'application/json'
+}
 
+    entity_payload = {
+                    "id": "urn:ngsi-ld:Lorder:Lorder-001",
+                    "type": "Lorder",
+                    "currentOrderNumber": {"type": "Property", "value": "" }    
+                    }
+    payload = json.dumps(entity_payload)
+    try:
+        response = requests.request("POST", url, headers=headers, data=payload)
+        response.raise_for_status()
+        logger.info("Successfully created entity.")
+        return True
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Failed to create entity: {e}")
+        return False
+    
+
+
+
+
+def update_lea_entity(ORION_LD_URL, ORION_LD_PORT, CONTEXT_URL, CONTEXT_PORT, order_number):    
+    """Update the currentOrderNumber attribute in the LEA entity."""
+    url = f"http://{ORION_LD_URL}:{ORION_LD_PORT}/ngsi-ld/v1/entities/urn:ngsi-ld:Lorder:Lorder-001/attrs"
+    headers = {
+        "Link": f'<http://{CONTEXT_URL}:{CONTEXT_PORT}/ngsi-context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"',
+        'Content-Type': 'application/json'
+      }
+
+    update_payload = {
+        "currentOrderNumber": {
+            "type": "Property",
+            "value": order_number
+        }
+    }
+
+    try:
+        response = requests.patch(url, headers=headers, json=update_payload)
+        response.raise_for_status()
+        logger.info("Successfully updated LEA entity.")
+        return True
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Failed to update LEA entity: {e}")
+        return False
 
 
 
