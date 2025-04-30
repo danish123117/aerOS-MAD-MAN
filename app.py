@@ -146,7 +146,8 @@ def start_production():
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")[:-2]
         response_patch =update_processing_order_list(in_process_list, ORION_LD_URL, ORION_LD_PORT, CONTEXT_URL, CONTEXT_PORT,timestamp)
         response_factory = post_order_to_factory(orderQuantity(in_process_list))
-        lea_response = update_lea_entity(ORION_LD_URL, ORION_LD_PORT, CONTEXT_URL, CONTEXT_PORT, response_factory)
+        order_current = get_current_order_number()
+        lea_response = update_lea_entity(ORION_LD_URL, ORION_LD_PORT, CONTEXT_URL, CONTEXT_PORT, order_number=order_current)
         if response_patch and response_factory:
             return jsonify({"success": True})
         else:
@@ -160,7 +161,7 @@ def start_production():
 
 
 
-@app.route("/complete_production", methods=["POST"])
+@app.route("/complete_production", methods=["POST", "GET"])
 def complete_production():
     _, in_process_list, _ = extract_entity_data(ORION_LD_URL, ORION_LD_PORT,CONTEXT_URL, CONTEXT_PORT,ENTITY_TYPE="Order")
 
